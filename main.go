@@ -84,14 +84,15 @@ func main() {
 
 		if auth, ok := c.Request.Header["Authorization"]; ok {
 			bearer := strings.TrimPrefix(auth[0], "Bearer ")
+			fmt.Println(bearer)
 
 			key, err := pemToKey(publicKey)
 			if err != nil {
-				fmt.Println(err)
+				fmt.Println(err.Error())
 			}
 			decoded, err := decodeJWT(bearer, key)
 			if err != nil {
-				fmt.Println(err)
+				fmt.Println(err.Error())
 			}
 
 			out.WriteByte('\n')
