@@ -20,8 +20,11 @@ SOFTWARE.
 package main
 
 import (
+	"crypto/rsa"
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"io"
 	"log"
@@ -31,6 +34,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v4"
 )
 
 var (
@@ -39,7 +43,7 @@ var (
 )
 
 type keycloakRealm struct {
-	PublicKey string `json:"public_key"`
+	PublicKey []byte `json:"public_key"`
 }
 
 func init() {
@@ -63,7 +67,6 @@ func main() {
 
 	var realm keycloakRealm
 	json.Unmarshal(body, &realm)
-	fmt.Printf("%#v\n", realm)
 
 	r := gin.Default()
 	r.GET("/", func(c *gin.Context) {
@@ -73,15 +76,46 @@ func main() {
 		out.Write(req)
 
 		if auth, ok := c.Request.Header["Authorization"]; ok {
+			bearer := strings.TrimPrefix(auth[0], "Bearer ")
+
+			key, _ := pemToKey(realm.PublicKey)
+			decoded, _ := decodeJWT(bearer, key)
+
 			out.WriteByte('\n')
-			out.WriteString(auth[0])
-
-			fmt.Println(auth[0])
-
-			// TODO: decode the jwt
+			out.WriteString(decoded.Raw)
 		}
 
 		c.String(http.StatusOK, out.String())
 	})
 	r.Run()
+}
+
+func pemToKey(pemData []byte) (*rsa.PublicKey, error) {
+	block, _ := pem.Decode(pemData)
+	if block == nil {
+		return nil, fmt.Errorf("failed to decode public key in PEM format")
+	}
+
+	parsedKey, err := x509.ParsePKIXPublicKey(block.Bytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse RSA public key: %v", err)
+	}
+
+	if rsaPublicKey, ok := parsedKey.(*rsa.PublicKey); ok {
+		return rsaPublicKey, nil
+	}
+
+	return nil, fmt.Errorf("public key is not an RSA one")
+}
+
+func decodeJWT(bearerToken string, publicKey *rsa.PublicKey) (*jwt.Token, error) {
+	token, err := jwt.Parse(bearerToken, func(token *jwt.Token) (interface{}, error) {
+		// Don't forget to validate the alg is what you expect:
+		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return publicKey, nil
+	})
+
+	return token, err
 }
