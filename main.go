@@ -82,14 +82,14 @@ func main() {
 		req, _ := httputil.DumpRequest(c.Request, false)
 		out.Write(req)
 
-		if auth, ok := c.Request.Header["X-Forwarded-Access-Token"]; ok {
+		if auth, ok := c.Request.Header["Authorization"]; ok {
 			bearer := strings.TrimPrefix(auth[0], "Bearer ")
 
 			key, _ := pemToKey(publicKey)
 			decoded, _ := decodeJWT(bearer, key)
 
 			out.WriteByte('\n')
-			out.WriteString(fmt.Sprintf("%#v\n", decoded.Header))
+			out.WriteString(fmt.Sprintf("%#v\n", decoded.Claims))
 		}
 
 		c.String(http.StatusOK, out.String())
