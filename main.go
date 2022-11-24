@@ -43,7 +43,7 @@ var (
 )
 
 type keycloakRealm struct {
-	PublicKey []byte `json:"public_key"`
+	PublicKey string `json:"public_key"`
 }
 
 func init() {
@@ -71,7 +71,7 @@ func main() {
 	// Build the final public key and ensure it is wrapped as needed
 	key := strings.Builder{}
 	key.WriteString("-----BEGIN RSA PUBLIC KEY-----\n")
-	key.Write(realm.PublicKey)
+	key.WriteString(realm.PublicKey)
 	key.WriteString("\n-----END RSA PUBLIC KEY-----")
 
 	fmt.Println(key.String())
