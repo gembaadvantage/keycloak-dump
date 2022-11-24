@@ -73,6 +73,8 @@ func main() {
 	key.WriteString("-----BEGIN RSA PUBLIC KEY-----\n")
 	key.Write(realm.PublicKey)
 	key.WriteString("\n-----END RSA PUBLIC KEY-----")
+
+	fmt.Println(key.String())
 	publicKey = []byte(key.String())
 
 	r := gin.Default()
