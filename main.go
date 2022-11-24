@@ -73,8 +73,6 @@ func main() {
 	key.WriteString("-----BEGIN RSA PUBLIC KEY-----\n")
 	key.WriteString(realm.PublicKey)
 	key.WriteString("\n-----END RSA PUBLIC KEY-----")
-
-	fmt.Println(key.String())
 	publicKey = []byte(key.String())
 
 	r := gin.Default()
@@ -86,19 +84,12 @@ func main() {
 
 		if auth, ok := c.Request.Header["Authorization"]; ok {
 			bearer := strings.TrimPrefix(auth[0], "Bearer ")
-			fmt.Println(bearer)
 
-			key, err := pemToKey(publicKey)
-			if err != nil {
-				fmt.Println(err.Error())
-			}
-			decoded, err := decodeJWT(bearer, key)
-			if err != nil {
-				fmt.Println(err.Error())
-			}
+			key, _ := pemToKey(publicKey)
+			decoded, _ := decodeJWT(bearer, key)
 
 			out.WriteByte('\n')
-			out.WriteString(decoded.Raw)
+			out.WriteString(fmt.Sprintf("%#v\n", decoded.Header))
 		}
 
 		c.String(http.StatusOK, out.String())
