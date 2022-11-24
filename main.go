@@ -22,6 +22,7 @@ package main
 import (
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -62,6 +63,7 @@ func main() {
 
 	var realm keycloakRealm
 	json.Unmarshal(body, &realm)
+	fmt.Printf("%#v\n", realm)
 
 	r := gin.Default()
 	r.GET("/", func(c *gin.Context) {
@@ -73,6 +75,8 @@ func main() {
 		if auth, ok := c.Request.Header["Authorization"]; ok {
 			out.WriteByte('\n')
 			out.WriteString(auth[0])
+
+			fmt.Println(auth[0])
 
 			// TODO: decode the jwt
 		}
