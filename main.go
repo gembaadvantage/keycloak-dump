@@ -20,18 +20,53 @@ SOFTWARE.
 package main
 
 import (
+	"encoding/json"
+	"io"
+	"log"
 	"net/http"
 	"net/http/httputil"
+	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
+var (
+	keycloakRealmURL = os.Getenv("KEYCLOAK_REALM_URL")
+	publicKey        = ""
+)
+
+type keycloakRealm struct {
+	PublicKey string `json:"public_key"`
+}
+
 func main() {
+	// Query the keycloak Realm upon startup and extract the public key
+	resp, err := http.Get(keycloakRealmURL)
+	if err != nil {
+		log.Fatal(err)
+	}
+	body, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+
+	var realm keycloakRealm
+	json.Unmarshal(body, &realm)
+
 	r := gin.Default()
 	r.GET("/", func(c *gin.Context) {
-		out, _ := httputil.DumpRequest(c.Request, false)
+		out := strings.Builder{}
 
-		c.String(http.StatusOK, string(out))
+		req, _ := httputil.DumpRequest(c.Request, false)
+		out.Write(req)
+
+		if auth, ok := c.Request.Header["Authorization"]; ok {
+			out.WriteByte('\n')
+			out.WriteString(auth[0])
+
+			// TODO: decode the jwt
+		}
+
+		c.String(http.StatusOK, out.String())
 	})
 	r.Run()
 }
