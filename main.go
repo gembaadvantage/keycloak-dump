@@ -39,7 +39,7 @@ import (
 
 var (
 	keycloakRealmURL = os.Getenv("KEYCLOAK_REALM_URL")
-	publicKey        = ""
+	publicKey        []byte
 )
 
 type keycloakRealm struct {
@@ -68,6 +68,13 @@ func main() {
 	var realm keycloakRealm
 	json.Unmarshal(body, &realm)
 
+	// Build the final public key and ensure it is wrapped as needed
+	key := strings.Builder{}
+	key.WriteString("-----BEGIN RSA PUBLIC KEY-----")
+	key.Write(realm.PublicKey)
+	key.WriteString("-----END RSA PUBLIC KEY-----")
+	publicKey = []byte(key.String())
+
 	r := gin.Default()
 	r.GET("/", func(c *gin.Context) {
 		out := strings.Builder{}
@@ -78,7 +85,7 @@ func main() {
 		if auth, ok := c.Request.Header["Authorization"]; ok {
 			bearer := strings.TrimPrefix(auth[0], "Bearer ")
 
-			key, _ := pemToKey(realm.PublicKey)
+			key, _ := pemToKey(publicKey)
 			decoded, _ := decodeJWT(bearer, key)
 
 			out.WriteByte('\n')
