@@ -70,9 +70,9 @@ func main() {
 
 	// Build the final public key and ensure it is wrapped as needed
 	key := strings.Builder{}
-	key.WriteString("-----BEGIN RSA PUBLIC KEY-----")
+	key.WriteString("-----BEGIN RSA PUBLIC KEY-----\n")
 	key.Write(realm.PublicKey)
-	key.WriteString("-----END RSA PUBLIC KEY-----")
+	key.WriteString("\n-----END RSA PUBLIC KEY-----")
 	publicKey = []byte(key.String())
 
 	r := gin.Default()
@@ -85,8 +85,14 @@ func main() {
 		if auth, ok := c.Request.Header["Authorization"]; ok {
 			bearer := strings.TrimPrefix(auth[0], "Bearer ")
 
-			key, _ := pemToKey(publicKey)
-			decoded, _ := decodeJWT(bearer, key)
+			key, err := pemToKey(publicKey)
+			if err != nil {
+				fmt.Println(err)
+			}
+			decoded, err := decodeJWT(bearer, key)
+			if err != nil {
+				fmt.Println(err)
+			}
 
 			out.WriteByte('\n')
 			out.WriteString(decoded.Raw)
