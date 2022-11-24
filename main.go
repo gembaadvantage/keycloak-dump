@@ -20,6 +20,7 @@ SOFTWARE.
 package main
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"io"
 	"log"
@@ -38,6 +39,16 @@ var (
 
 type keycloakRealm struct {
 	PublicKey string `json:"public_key"`
+}
+
+func init() {
+	// Temporary hack to ignore self-signed certificates
+	cfg := &tls.Config{
+		InsecureSkipVerify: true,
+	}
+	http.DefaultClient.Transport = &http.Transport{
+		TLSClientConfig: cfg,
+	}
 }
 
 func main() {
