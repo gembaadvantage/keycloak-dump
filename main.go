@@ -82,7 +82,7 @@ func main() {
 		req, _ := httputil.DumpRequest(c.Request, false)
 		out.Write(req)
 
-		if auth, ok := c.Request.Header["Authorization"]; ok {
+		if auth, ok := c.Request.Header["X-Forwarded-Access-Token"]; ok {
 			bearer := strings.TrimPrefix(auth[0], "Bearer ")
 
 			key, _ := pemToKey(publicKey)
